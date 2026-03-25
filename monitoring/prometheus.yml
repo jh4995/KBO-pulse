@@ -1,0 +1,10 @@
+# Prometheus 전역 설정
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# 메트릭을 수집할 대상(Job)들에 대한 설정
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

@@ -1,0 +1,16 @@
+{
+  "name": "kbo-platform-server",
+  "version": "0.1.0",
+  "description": "KBO 야구 팬 참여형 데이터 플랫폼 — 백엔드 서버",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "node --watch src/app.js",
+    "start": "node src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "ioredis": "^5.4.1",
+    "pg": "^8.13.1",
+    "dotenv": "^16.4.7"
+  }
+}
