@@ -4,6 +4,10 @@
 # Node.js (Express) + PostgreSQL + Redis + Nginx + Prometheus + Grafana
 # App 서버 2대 → 분산 락, Rate Limiting, 캐싱의 다중 서버 정당성 확보
 # ============================================================
+# REDIS_ENABLED=true  → Redis 경유 (실험군)
+# REDIS_ENABLED=false → DB 직접 조회 (대조군)
+# 환경변수 하나로 부하테스트 A/B 전환
+# ============================================================
 
 services:
   # ----------------------------------------------------------
@@ -25,6 +29,7 @@ services:
       - DB_NAME=${POSTGRES_DB}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_ENABLED=${REDIS_ENABLED}
     volumes:
       - ./server:/app
       - /app/node_modules
@@ -56,6 +61,7 @@ services:
       - DB_NAME=${POSTGRES_DB}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_ENABLED=${REDIS_ENABLED}
     volumes:
       - ./server:/app
       - /app/node_modules
