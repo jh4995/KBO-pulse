@@ -1,13 +1,23 @@
+require("dotenv").config();
+require("express-async-errors");
+
 const express = require("express");
-const { pool, testConnection: testDB } = require("./config/db");
-const { redis, testConnection: testRedis } = require("./config/redis");
-const healthRoutes = require("./routes/health");
+const cors = require("cors");
+const helmet = require("helmet");
+const { pool } = require("./config/db");
+const { redis } = require("./config/redis");
+const registerRoutes = require("./routes");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 const PORT = process.env.APP_PORT || 3000;
 const INSTANCE_ID = process.env.APP_INSTANCE_ID || "local";
 
-// JSON 파싱
+// ──────────────────────────────────────────────
+// 공통 미들웨어
+// ──────────────────────────────────────────────
+app.use(helmet());
+app.use(cors());
 app.use(express.json());
 
 // 모든 응답에 인스턴스 ID 포함 (로드밸런싱 확인용)
@@ -16,25 +26,38 @@ app.use((req, res, next) => {
   next();
 });
 
-// 라우트 등록
-app.use("/", healthRoutes);
+// ──────────────────────────────────────────────
+// 라우트 자동 등록 (각자 기능 담당자가 app.js를 건드리지 않음)
+// ──────────────────────────────────────────────
+registerRoutes(app)
 
 // ──────────────────────────────────────────────
-// 기능별 라우트 (구현 시 각 담당자가 추가)
+// 404 + 글로벌 에러 핸들러
 // ──────────────────────────────────────────────
-// const statsRoutes = require("./routes/stats");   // A: 선수 스탯 조회
-// const voteRoutes = require("./routes/vote");     // B: MVP 투표/랭킹
-// const gameRoutes = require("./routes/game");     // C: 실시간 경기 현황
-// app.use("/api/stats", statsRoutes);
-// app.use("/api/vote", voteRoutes);
-// app.use("/api/game", gameRoutes);
-
-// 404
 app.use((req, res) => {
-  res.status(404).json({ error: "not found" });
+  res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "not found" } });
 });
+ 
+app.use(errorHandler);
 
-// 서버 시작
-app.listen(PORT, () => {
+// ──────────────────────────────────────────────
+// 서버 시작 + Graceful Shutdown
+// ──────────────────────────────────────────────
+const server = app.listen(PORT, () => {
   console.log(`[${INSTANCE_ID}] Server running on port ${PORT}`);
+  console.log(`[${INSTANCE_ID}] REDIS_ENABLED=${process.env.REDIS_ENABLED || "true"}`);
 });
+ 
+async function shutdown(signal) {
+  console.log(`[${INSTANCE_ID}] ${signal} received. Shutting down...`);
+  server.close(async () => {
+    await pool.end();
+    redis.disconnect();
+    console.log(`[${INSTANCE_ID}] Shutdown complete.`);
+    process.exit(0);
+  });
+}
+ 
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+ 
