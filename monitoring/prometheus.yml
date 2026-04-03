@@ -1,3 +1,8 @@
+# ============================================================
+# Prometheus 설정
+# App 서버 메트릭 수집 활성화 (prom-client /metrics 엔드포인트)
+# ============================================================
+
 # Prometheus 전역 설정
 global:
   scrape_interval: 15s
@@ -5,6 +10,14 @@ global:
 
 # 메트릭을 수집할 대상(Job)들에 대한 설정
 scrape_configs:
+  # Prometheus 자체 메트릭
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
+
+  # App 서버 메트릭 (prom-client가 /metrics에 노출)
+  - job_name: "kbo-app"
+    static_configs:
+      - targets: ["app-1:3000", "app-2:3000"]
+    metrics_path: "/metrics"
+ 
