@@ -9,3 +9,9 @@ Thumbs.db
 
 # 데이터 적재용 CSV 파일 무시
 db/seed/csv_data/
+
+# venv 폴더 무시 (psycopg2 설치 시 생성됨)
+venv/
+__pycache__/
+*.pyc
+.env
