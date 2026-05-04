@@ -14,7 +14,7 @@ from psycopg2.extras import execute_values
 # ─────────────────────────────────────────────
 DB_CONFIG = {
     "host": "localhost",
-    "port": 5432,
+    "port": int(os.getenv("DB_PORT", "5433")),
     "dbname": "kbo_db",
     "user": "kbo_user",
     "password": "kbo_pass_1234",
