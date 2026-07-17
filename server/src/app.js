@@ -8,6 +8,7 @@ const { pool } = require("./config/db");
 const { redis } = require("./config/redis");
 const registerRoutes = require("./routes");
 const errorHandler = require("./middleware/errorHandler");
+const voteService = require("./services/voteService"); // ← 추가
 
 const app = express();
 const PORT = process.env.APP_PORT || 3000;
@@ -29,7 +30,7 @@ app.use((req, res, next) => {
 // ──────────────────────────────────────────────
 // 라우트 자동 등록 (각자 기능 담당자가 app.js를 건드리지 않음)
 // ──────────────────────────────────────────────
-registerRoutes(app)
+registerRoutes(app);
 
 // ──────────────────────────────────────────────
 // 404 + 글로벌 에러 핸들러
@@ -37,8 +38,13 @@ registerRoutes(app)
 app.use((req, res) => {
   res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "not found" } });
 });
- 
+
 app.use(errorHandler);
+
+// ──────────────────────────────────────────────
+// B: Vote Write-Behind + Pub/Sub 초기화 ← 추가
+// ──────────────────────────────────────────────
+voteService.init();
 
 // ──────────────────────────────────────────────
 // 서버 시작 + Graceful Shutdown
@@ -47,17 +53,17 @@ const server = app.listen(PORT, () => {
   console.log(`[${INSTANCE_ID}] Server running on port ${PORT}`);
   console.log(`[${INSTANCE_ID}] REDIS_ENABLED=${process.env.REDIS_ENABLED || "true"}`);
 });
- 
+
 async function shutdown(signal) {
   console.log(`[${INSTANCE_ID}] ${signal} received. Shutting down...`);
   server.close(async () => {
+    await voteService.cleanup(); // ← 추가
     await pool.end();
     redis.disconnect();
     console.log(`[${INSTANCE_ID}] Shutdown complete.`);
     process.exit(0);
   });
 }
- 
+
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
- 
