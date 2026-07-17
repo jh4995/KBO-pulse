@@ -9,19 +9,38 @@ const { success, fail } = require("../utils/response");
 // Redis 패턴: INCR, Sorted Set, SET NX EX (분산 락)
 // ──────────────────────────────────────────────
 
-// POST /api/vote/:gameId/:playerId — 투표하기
+/**
+ * POST /api/vote/:gameId/:playerId — 투표하기
+ * Body: { "userId": 1 }
+ */
 router.post("/:gameId/:playerId", async (req, res) => {
   const { gameId, playerId } = req.params;
-  const result = await voteService.castVote(gameId, playerId);
-  res.status(201).json(success(result));
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json(fail("BAD_REQUEST", "userId는 필수입니다"));
+  }
+
+  try {
+    const result = await voteService.castVote(gameId, playerId, userId);
+    res.status(201).json(success(result));
+  } catch (err) {
+    if (err.code === "DUPLICATE_VOTE") {
+      return res.status(409).json(fail("DUPLICATE_VOTE", err.message));
+    }
+    throw err;
+  }
 });
- 
-// GET /api/vote/:gameId/ranking — 실시간 투표 랭킹 조회
+
+/**
+ * GET /api/vote/:gameId/ranking — 실시간 투표 랭킹 조회
+ * Query: ?limit=10
+ */
 router.get("/:gameId/ranking", async (req, res) => {
   const { gameId } = req.params;
   const limit = parseInt(req.query.limit) || 10;
   const result = await voteService.getRanking(gameId, limit);
   res.json(success(result));
 });
- 
+
 module.exports = router;
