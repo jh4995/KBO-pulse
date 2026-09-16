@@ -1,6 +1,5 @@
 const { pool } = require("../config/db");
 
-// 진행 중인 경기 목록 조회
 async function getLiveGames() {
   const query = `
     SELECT game_id, home_team, away_team, status, home_score, away_score
@@ -32,13 +31,9 @@ async function getGameStatus(gameId) {
   }
 }
 
-/**
- * 실시간 점수 업데이트 (시뮬레이션 루프에서 호출)
- */
 async function updateLiveScore(statusData) {
   const { gameId, homeScore, awayScore, status } = statusData;
 
-  // games 테이블의 컬럼명에 맞춰 업데이트 실행
   const query = `
     UPDATE games 
     SET home_score = $1, away_score = $2, status = $3
