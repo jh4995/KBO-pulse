@@ -154,6 +154,9 @@ services:
     container_name: kbo-prometheus
     ports:
       - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml" # 컨테이너 내 정석 경로 명시
+      - "--web.enable-remote-write-receiver" # k6가 밀어넣을 수 있게 수신기 활성화
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
